@@ -1,4 +1,4 @@
-class AttributesAndTokenLists::TagBuilder
+class StyledHelpers::TagBuilder
   delegate_missing_to :@tag_with_options
 
   def initialize(tag, tag_name, attributes)

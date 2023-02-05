@@ -1,4 +1,7 @@
-class AttributesAndTokenLists::StyledHelper
+class StyledHelpers::Helpers
+  class NameError < StyledHelpers::Error
+  end
+
   def initialize(view_context, &block)
     @view_context = view_context
 
@@ -6,6 +9,6 @@ class AttributesAndTokenLists::StyledHelper
   end
 
   def styled(...)
-    AttributesAndTokenLists::ViewContext.new(@view_context, ...)
+    StyledHelpers::ViewContext.new(@view_context, ...)
   end
 end

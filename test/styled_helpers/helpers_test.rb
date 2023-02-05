@@ -1,10 +1,6 @@
 require "test_helper"
 
-class AttributesAndTokenLists::ViewContextTest < ActionView::TestCase
-  def builder(&block)
-    Class.new(AttributesAndTokenLists::StyledHelper, &block).new(view)
-  end
-
+class StyledHelpers::HelpersTest < ActionView::TestCase
   test "#styled defaults to div" do
     ui = builder do
       def div = styled
@@ -55,7 +51,7 @@ class AttributesAndTokenLists::ViewContextTest < ActionView::TestCase
   test "#styled accepts variants: {defaults: {}}" do
     ui = builder do
       def button = styled("button", variants: {
-        defaults: {class: "rounded-full"},
+        defaults: {class: "rounded-full"}
       })
     end
 
@@ -82,6 +78,20 @@ class AttributesAndTokenLists::ViewContextTest < ActionView::TestCase
     assert_button "Primary", class: %w[bg-green-500]
   end
 
+  test "#styled boolean variants are available as methods" do
+    ui = builder do
+      def button = styled("button", variants: {
+        bordered: {true => {class: "border border-1"}}
+      })
+    end
+
+    render inline: <<~ERB, locals: {ui: ui}
+      <%= ui.button.bordered.tag "method" %>
+    ERB
+
+    assert_button "method", class: %w[border border-1]
+  end
+
   test "invoking a method named after multiple variant values raises an error" do
     ui = builder do
       def button = styled("button", variants: {
@@ -90,7 +100,7 @@ class AttributesAndTokenLists::ViewContextTest < ActionView::TestCase
       })
     end
 
-    assert_raises AttributesAndTokenLists::ViewContext::VariantCollisionError do
+    assert_raises StyledHelpers::Helpers::NameError do
       ui.button.big
     end
   end
@@ -131,6 +141,38 @@ class AttributesAndTokenLists::ViewContextTest < ActionView::TestCase
     assert_button class: %w[rounded-full bg-green-500], text: "keywords"
   end
 
+  test "#with supports boolean variants" do
+    ui = builder do
+      def button = styled("button", variants: {
+        bold: {true => {class: "font-bold"}},
+        bordered: {true => {class: "border border-1"}}
+      })
+    end
+
+    render inline: <<~ERB, locals: {ui: ui}
+      <%= ui.button.with(:bold, bordered: true).tag "mixed" %>
+    ERB
+
+    assert_button class: %w[font-bold border border-1], text: "mixed"
+  end
+
+  test "#with supports boolean variants declared as symbols" do
+    ui = builder do
+      # rubocop:disable Lint/BooleanSymbol
+      def button = styled("button", variants: {
+        bold: {true: {class: "font-bold"}},
+        bordered: {true: {class: "border border-1"}}
+      })
+      # rubocop:enable Lint/BooleanSymbol
+    end
+
+    render inline: <<~ERB, locals: {ui: ui}
+      <%= ui.button.with(:bold, bordered: true).tag "mixed" %>
+    ERB
+
+    assert_button class: %w[font-bold border border-1], text: "mixed"
+  end
+
   test "variants can be combined by calls to #with" do
     ui = builder do
       def button = styled("button", variants: {
@@ -157,7 +199,7 @@ class AttributesAndTokenLists::ViewContextTest < ActionView::TestCase
   test "invoking #with with a block delegates to #with_attributes" do
     ui = builder do
       def button = styled("button", variants: {
-        color: {primary: {class: "bg-green-500"}},
+        color: {primary: {class: "bg-green-500"}}
       })
     end
 
@@ -182,15 +224,27 @@ class AttributesAndTokenLists::ViewContextTest < ActionView::TestCase
     assert_equal %(<input class="rounded-full">), rendered.strip
   end
 
+  test "#tag for void elements can override the default tag name" do
+    ui = builder do
+      def input = styled("input", class: "rounded-full")
+    end
+
+    render inline: <<~ERB, locals: {ui: ui}
+      <%= ui.input.tag.textarea %>
+    ERB
+
+    assert_equal %(<textarea class="rounded-full">\n</textarea>), rendered.strip
+  end
+
   test "#call is an alias for #merge" do
     ui = builder do
       def button = styled("button", class: "rounded-full")
     end
 
-    assert_equal({class: "rounded-full bg-green-500"}, ui.button.(class: "bg-green-500").to_h)
+    assert_equal({class: "rounded-full bg-green-500"}, ui.button.call(class: "bg-green-500").to_h)
   end
 
-  test "#with_attributes accepts an AttributesAndTokenLists::ViewContext instance" do
+  test "#with_attributes accepts an StyledHelpers::ViewContext instance" do
     ui = builder do
       def button = styled("button", class: "rounded-full")
     end
@@ -204,7 +258,7 @@ class AttributesAndTokenLists::ViewContextTest < ActionView::TestCase
     assert_button "Submit", class: %w[rounded-full font-medium], type: "submit"
   end
 
-  test "Object#with_options accepts AttributesAndTokenLists::ViewContext instance" do
+  test "Object#with_options accepts StyledHelpers::ViewContext instance" do
     ui = builder do
       def button = styled("button", class: "rounded-full")
     end
@@ -244,6 +298,16 @@ class AttributesAndTokenLists::ViewContextTest < ActionView::TestCase
     assert_equal %(class="rounded-full"), rendered
   end
 
+  test "cannot name a variant :styled" do
+    ui = builder
+
+    exception = assert_raises do
+      ui.styled(variants: {styled: {class: "will fail"}})
+    end
+
+    assert_includes exception.message, %(Cannot define :styled)
+  end
+
   test "cannot name a variant after an existing method" do
     ui = builder do
       def button = styled(variants: {with: {class: "will fail"}})
@@ -254,5 +318,9 @@ class AttributesAndTokenLists::ViewContextTest < ActionView::TestCase
     end
 
     assert_includes exception.message, %(Cannot define :with)
+  end
+
+  def builder(...)
+    StyledHelpers::Helpers.new(view, ...)
   end
 end

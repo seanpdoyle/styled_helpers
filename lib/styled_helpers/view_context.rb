@@ -1,48 +1,49 @@
-class AttributesAndTokenLists::ViewContext
-  class VariantCollisionError < StandardError
-  end
-
+class StyledHelpers::ViewContext
   delegate :to_h, :to_hash, :to_s, to: :@attributes
 
-  def initialize(view_context, tag_name = :div, variants: {}, default_variants: {}, **defaults)
+  def initialize(view_context, tag_name = :div, variants: {}, **defaults)
     @view_context = view_context
     @tag_name = tag_name.to_sym
     @variants = variants
-    @default_variants = default_variants
     @attributes = view_context.tag.attributes(@variants.delete(:defaults), defaults)
 
-    variants.each_key { |key| raise_collision!(key) if respond_to?(key) }
+    variants.each_key do |key|
+      if respond_to?(key) || key.in?(StyledHelpers::Helpers.public_instance_methods(false))
+        raise_collision!(key)
+      end
+    end
   end
 
   def merge!(...)
     tap { @attributes.merge!(...) }
   end
+  alias_method :deep_merge!, :merge!
 
   def merge(...)
     dup.merge!(...)
   end
+  alias_method :deep_merge, :merge
   alias_method :call, :merge
 
   ruby2_keywords def tag(*arguments, &block)
     if arguments.none? && block.nil?
-      AttributesAndTokenLists::TagBuilder.new(@view_context.tag, @tag_name, @attributes)
+      StyledHelpers::TagBuilder.new(@view_context.tag, @tag_name, @attributes)
     else
       @view_context.tag.with_options(@attributes).public_send(@tag_name, *arguments, &block)
     end
   end
 
   def with(*names, **choices, &block)
-    sliced = variants_at(*names) + choices.filter_map { |name, variant| @variants.dig(name, variant) }
+    sliced = variants_at(*names) + choices.filter_map { |name, variant| dig_variant(name, variant) }
 
     sliced.reduce(self, :merge).then { block.nil? ? _1 : _1.yield_self(&block) }
   end
 
   def dup
-    AttributesAndTokenLists::ViewContext.new(
+    StyledHelpers::ViewContext.new(
       @view_context,
       @tag_name,
       variants: @variants,
-      default_variants: @default_variants,
       **@attributes.dup
     )
   end
@@ -52,7 +53,7 @@ class AttributesAndTokenLists::ViewContext
       if (variant = find_variant_by_name!(name))
         define_singleton_method(name) do
           merge(variant).tap do |builder|
-            if variant.is_a?(AttributesAndTokenLists::ViewContext)
+            if variant.is_a?(StyledHelpers::ViewContext)
               builder.instance_variable_set(:@tag_name, variant.instance_variable_get(:@tag_name))
             end
           end
@@ -74,29 +75,34 @@ class AttributesAndTokenLists::ViewContext
 
   private
 
-  def variant_values
-    @variants.each_value.to_a
-  end
-
   def variants_at(*names)
-    names.flatten.compact.map { |name| find_variant_by_name!(name) }
+    names.flatten.map { |name| find_variant_by_name!(name) }.compact
   end
 
   def find_variant_by_name!(name)
     if (variants = select_variants_by_name(name))
       if variants.many?
-        raise VariantCollisionError, "#{name.inspect} matches several variants"
+        raise StyledHelpers::Helpers::NameError, "#{name.inspect} matches several variants"
       else
-        variants.first[name]
+        variants.first
       end
     end
   end
 
   def select_variants_by_name(name)
-    variant_values.filter { |variant| variant.key?(name) }.presence
+    [
+      dig_variant(name),
+      *@variants.filter_map { |_, variant| variant[name] }
+    ].compact.presence
+  end
+
+  def dig_variant(name, value = true)
+    # rubocop:disable Lint/BooleanSymbol
+    @variants.dig(name, value) || @variants.dig(name, true) || @variants.dig(name, :true)
+    # rubocop:enable Lint/BooleanSymbol
   end
 
   def raise_collision!(key)
-    raise VariantCollisionError, "Cannot define #{key.inspect}, it collides with a method name"
+    raise StyledHelpers::Helpers::NameError, "Cannot define #{key.inspect}, it collides with a method name"
   end
 end
