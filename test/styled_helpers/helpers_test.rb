@@ -3,7 +3,9 @@ require "test_helper"
 class StyledHelpers::HelpersTest < ActionView::TestCase
   test "#styled defaults to div" do
     ui = builder do
-      def div = styled
+      def div
+        styled
+      end
     end
 
     render inline: <<~ERB, locals: {ui: ui}
@@ -15,7 +17,9 @@ class StyledHelpers::HelpersTest < ActionView::TestCase
 
   test "#styled tag can be overridden at the call site" do
     ui = builder do
-      def textarea = styled("textarea")
+      def textarea
+        styled "textarea"
+      end
     end
 
     render inline: <<~ERB, locals: {ui: ui}
@@ -27,7 +31,9 @@ class StyledHelpers::HelpersTest < ActionView::TestCase
 
   test "#styled accepts a tag_name" do
     ui = builder do
-      def button = styled("button")
+      def button
+        styled "button"
+      end
     end
 
     render inline: <<~ERB, locals: {ui: ui}
@@ -42,7 +48,9 @@ class StyledHelpers::HelpersTest < ActionView::TestCase
 
   test "#styled accepts defaults directly" do
     ui = builder do
-      def rounded = styled(class: "rounded-full")
+      def rounded
+        styled class: "rounded-full"
+      end
     end
 
     assert_equal({class: "rounded-full"}, ui.rounded.to_h)
@@ -50,9 +58,11 @@ class StyledHelpers::HelpersTest < ActionView::TestCase
 
   test "#styled accepts variants: {defaults: {}}" do
     ui = builder do
-      def button = styled("button", variants: {
-        defaults: {class: "rounded-full"}
-      })
+      def button
+        styled "button", variants: {
+          defaults: {class: "rounded-full"}
+        }
+      end
     end
 
     render inline: <<~ERB, locals: {ui: ui}
@@ -66,9 +76,11 @@ class StyledHelpers::HelpersTest < ActionView::TestCase
 
   test "#styled variant values are available as methods" do
     ui = builder do
-      def button = styled("button", variants: {
-        color: {primary: {class: "bg-green-500"}}
-      })
+      def button
+        styled "button", variants: {
+          color: {primary: {class: "bg-green-500"}}
+        }
+      end
     end
 
     render inline: <<~ERB, locals: {ui: ui}
@@ -80,9 +92,11 @@ class StyledHelpers::HelpersTest < ActionView::TestCase
 
   test "#styled boolean variants are available as methods" do
     ui = builder do
-      def button = styled("button", variants: {
-        bordered: {true => {class: "border border-1"}}
-      })
+      def button
+        styled "button", variants: {
+          bordered: {true => {class: "border border-1"}}
+        }
+      end
     end
 
     render inline: <<~ERB, locals: {ui: ui}
@@ -94,10 +108,12 @@ class StyledHelpers::HelpersTest < ActionView::TestCase
 
   test "invoking a method named after multiple variant values raises an error" do
     ui = builder do
-      def button = styled("button", variants: {
-        text: {big: {class: "text-lg"}},
-        spacing: {big: {class: "p-4"}}
-      })
+      def button
+        styled "button", variants: {
+          text: {big: {class: "text-lg"}},
+          spacing: {big: {class: "p-4"}}
+        }
+      end
     end
 
     assert_raises StyledHelpers::Helpers::NameError do
@@ -107,10 +123,12 @@ class StyledHelpers::HelpersTest < ActionView::TestCase
 
   test "variants can accept styled helpers" do
     ui = builder do
-      def text = styled("p", variants: {
-        defaults: {class: "text-base"},
-        size: {heading1: styled("h1", class: "text-2xl")}
-      })
+      def text
+        styled "p", variants: {
+          defaults: {class: "text-base"},
+          size: {heading1: styled("h1", class: "text-2xl")}
+        }
+      end
     end
 
     render inline: <<~ERB, locals: {ui: ui}
@@ -126,10 +144,12 @@ class StyledHelpers::HelpersTest < ActionView::TestCase
 
   test "#with merges variants by value" do
     ui = builder do
-      def button = styled("button", variants: {
-        defaults: {class: "rounded-full"},
-        color: {primary: {class: "bg-green-500"}}
-      })
+      def button
+        styled "button", variants: {
+          defaults: {class: "rounded-full"},
+          color: {primary: {class: "bg-green-500"}}
+        }
+      end
     end
 
     render inline: <<~ERB, locals: {ui: ui}
@@ -143,10 +163,12 @@ class StyledHelpers::HelpersTest < ActionView::TestCase
 
   test "#with supports boolean variants" do
     ui = builder do
-      def button = styled("button", variants: {
-        bold: {true => {class: "font-bold"}},
-        bordered: {true => {class: "border border-1"}}
-      })
+      def button
+        styled "button", variants: {
+          bold: {true => {class: "font-bold"}},
+          bordered: {true => {class: "border border-1"}}
+        }
+      end
     end
 
     render inline: <<~ERB, locals: {ui: ui}
@@ -159,10 +181,12 @@ class StyledHelpers::HelpersTest < ActionView::TestCase
   test "#with supports boolean variants declared as symbols" do
     ui = builder do
       # rubocop:disable Lint/BooleanSymbol
-      def button = styled("button", variants: {
-        bold: {true: {class: "font-bold"}},
-        bordered: {true: {class: "border border-1"}}
-      })
+      def button
+        styled "button", variants: {
+          bold: {true: {class: "font-bold"}},
+          bordered: {true: {class: "border border-1"}}
+        }
+      end
       # rubocop:enable Lint/BooleanSymbol
     end
 
@@ -175,10 +199,12 @@ class StyledHelpers::HelpersTest < ActionView::TestCase
 
   test "variants can be combined by calls to #with" do
     ui = builder do
-      def button = styled("button", variants: {
-        color: {primary: {class: "bg-green-500"}},
-        border: {rounded: {class: "rounded-full"}}
-      })
+      def button
+        styled "button", variants: {
+          color: {primary: {class: "bg-green-500"}},
+          border: {rounded: {class: "rounded-full"}}
+        }
+      end
     end
 
     render inline: <<~ERB, locals: {ui: ui}
@@ -198,9 +224,11 @@ class StyledHelpers::HelpersTest < ActionView::TestCase
 
   test "invoking #with with a block delegates to #with_attributes" do
     ui = builder do
-      def button = styled("button", variants: {
-        color: {primary: {class: "bg-green-500"}}
-      })
+      def button
+        styled "button", variants: {
+          color: {primary: {class: "bg-green-500"}}
+        }
+      end
     end
 
     render inline: <<~ERB, locals: {ui: ui}
@@ -214,7 +242,9 @@ class StyledHelpers::HelpersTest < ActionView::TestCase
 
   test "#tag for void elements renders as HTML" do
     ui = builder do
-      def input = styled("input", class: "rounded-full")
+      def input
+        styled "input", class: "rounded-full"
+      end
     end
 
     render inline: <<~ERB, locals: {ui: ui}
@@ -226,7 +256,9 @@ class StyledHelpers::HelpersTest < ActionView::TestCase
 
   test "#tag for void elements can override the default tag name" do
     ui = builder do
-      def input = styled("input", class: "rounded-full")
+      def input
+        styled "input", class: "rounded-full"
+      end
     end
 
     render inline: <<~ERB, locals: {ui: ui}
@@ -238,7 +270,9 @@ class StyledHelpers::HelpersTest < ActionView::TestCase
 
   test "#call is an alias for #merge" do
     ui = builder do
-      def button = styled("button", class: "rounded-full")
+      def button
+        styled "button", class: "rounded-full"
+      end
     end
 
     assert_equal({class: "rounded-full bg-green-500"}, ui.button.call(class: "bg-green-500").to_h)
@@ -246,7 +280,9 @@ class StyledHelpers::HelpersTest < ActionView::TestCase
 
   test "#with_attributes accepts an StyledHelpers::ViewContext instance" do
     ui = builder do
-      def button = styled("button", class: "rounded-full")
+      def button
+        styled "button", class: "rounded-full"
+      end
     end
 
     render inline: <<~ERB, locals: {ui: ui}
@@ -260,7 +296,9 @@ class StyledHelpers::HelpersTest < ActionView::TestCase
 
   test "Object#with_options accepts StyledHelpers::ViewContext instance" do
     ui = builder do
-      def button = styled("button", class: "rounded-full")
+      def button
+        styled "button", class: "rounded-full"
+      end
     end
 
     render inline: <<~ERB, locals: {ui: ui}
@@ -274,7 +312,9 @@ class StyledHelpers::HelpersTest < ActionView::TestCase
 
   test "#to_hash splats into Action View helpers" do
     ui = builder do
-      def button = styled("button", class: "rounded-full")
+      def button
+        styled "button", class: "rounded-full"
+      end
     end
 
     render inline: <<~ERB, locals: {ui: ui}
@@ -290,7 +330,9 @@ class StyledHelpers::HelpersTest < ActionView::TestCase
 
   test "#to_s delegates to ActionView::Attributes" do
     ui = builder do
-      def attrs = styled(class: "rounded-full")
+      def attrs
+        styled class: "rounded-full"
+      end
     end
 
     rendered = ui.attrs.to_s
@@ -302,7 +344,7 @@ class StyledHelpers::HelpersTest < ActionView::TestCase
     ui = builder
 
     exception = assert_raises do
-      ui.styled(variants: {styled: {class: "will fail"}})
+      ui.styled variants: {styled: {class: "will fail"}}
     end
 
     assert_includes exception.message, %(Cannot define :styled)
@@ -310,7 +352,9 @@ class StyledHelpers::HelpersTest < ActionView::TestCase
 
   test "cannot name a variant after an existing method" do
     ui = builder do
-      def button = styled(variants: {with: {class: "will fail"}})
+      def button
+        styled variants: {with: {class: "will fail"}}
+      end
     end
 
     exception = assert_raises do
