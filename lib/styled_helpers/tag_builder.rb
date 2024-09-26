@@ -1,6 +1,4 @@
 class StyledHelpers::TagBuilder
-  delegate_missing_to :@tag_with_options
-
   def initialize(tag, tag_name, attributes)
     @tag = tag
     @tag_name = tag_name
@@ -10,5 +8,13 @@ class StyledHelpers::TagBuilder
 
   def to_s
     @tag.public_send(@tag_name, nil, **@attributes)
+  end
+
+  def method_missing(name, ...)
+    @tag_with_options.public_send(name, ...)
+  end
+
+  def respond_to_missing?(name, ...)
+    @tag_with_options.respond_to?(name)
   end
 end

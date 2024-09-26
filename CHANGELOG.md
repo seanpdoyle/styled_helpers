@@ -7,3 +7,7 @@ the version links.
 [commits]: https://github.com/seanpdoyle/styled_helpers
 
 ## main
+
+*   Expand version matrix to include `ruby@3.3` and `rails@7.2`
+
+    *Sean Doyle*
