@@ -7,7 +7,11 @@ class StyledHelpers::TagBuilder
   end
 
   def to_s
-    @tag.public_send(@tag_name, nil, **@attributes)
+    if @tag.method(@tag_name).arity.positive?
+      @tag.public_send(@tag_name, nil, **@attributes)
+    else
+      @tag.public_send(@tag_name, **@attributes)
+    end
   end
 
   def method_missing(name, ...)
